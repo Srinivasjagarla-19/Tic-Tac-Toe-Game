@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('/static/image.png');
+            background-size: cover;
+            background-position: center;
+            filter: blur(20px);
+            z-index: -1;
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0px 0px 25px rgba(0, 255, 255, 0.5);
+            color: cyan;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0px 0px 10px cyan;
+        }
+
+        #board {
+            display: inline-block;
+            margin: 20px 0;
+        }
+
+        .row {
+            display: flex;
+        }
+
+        .cell {
+            width: 120px;
+            height: 120px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid cyan;
+            font-size: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            color: cyan;
+            font-weight: bold;
+            text-shadow: 0px 0px 8px cyan;
+        }
+
+        .cell:hover {
+            background: rgba(0, 255, 255, 0.2);
+            transform: scale(1.1);
+            box-shadow: 0px 0px 10px cyan;
+        }
+
+        h2 {
+            margin: 10px 0;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00ffcc;
+            text-shadow: 0px 0px 8px #00ffcc;
+        }
+
+        .reset_button {
+            margin-top: 15px;
+            border: none;
+            font-size: 1.5rem;
+            padding: 12px 25px;
+            cursor: pointer;
+            border-radius: 20px;
+            background: linear-gradient(45deg, #00ffcc, #0099ff);
+            color: white;
+            font-weight: bold;
+            transition: 0.3s;
+            text-shadow: 0px 0px 10px white;
+        }
+
+        .reset_button:hover {
+            transform: scale(1.1);
+            background: linear-gradient(45deg, #0099ff, #00ffcc);
+            box-shadow: 0px 0px 20px #00ffcc;
+        }
+
+        /* Modal (Popup) */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #333;
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .close {
+            background: linear-gradient(45deg, #00ffcc, #0099ff);
+            border: none;
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: .2s linear;
+            padding-top: 5px;
+        }
+
+        .close:active{
+            transform: scale(0.95);
+        }
+
+        .close:hover {
+            background: linear-gradient(45deg, #0099ff, #00ffcc);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Tic-Tac-Toe</h1>
+        <div id="board">
+            {% include 'board.html' %}
+        </div>
+        <h2 id="status">{{ status }}</h2>
+        <button onclick="resetGame()" class="reset_button">Reset</button>
+    </div>
+
+    <div id="winModal" class="modal">
+        <div class="modal-content">
+            <p id="winMessage"></p>
+            <br>
+            <button class="close" onclick="closePopup()">OK</button>
+        </div>
+    </div>
+
+    <script>
+        function makeMove(i, j) {
+            fetch(`/move/${i}/${j}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('board').innerHTML = data.board_html;
+                    document.getElementById('status').innerText = data.status;
+
+                    if (data.status.includes('wins')) {
+                        showPopup(data.status);
+                    }
+                });
+        }
+
+        function resetGame() {
+            fetch(`/reset`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('board').innerHTML = data.board_html;
+                    document.getElementById('status').innerText = data.status;
+                });
+        }
+
+        function showPopup(status) {
+            const winModal = document.getElementById('winModal');
+            const winMessage = document.getElementById('winMessage');
+            winMessage.innerText = status;
+
+            winModal.style.display = 'flex';
+
+            if (status.includes("O wins")) {
+                document.querySelector(".close").addEventListener('click', resetGame);
+            }
+        }
+
+        function closePopup() {
+            const winModal = document.getElementById('winModal');
+            winModal.style.display = 'none';
+
+            if (document.getElementById('winMessage').innerText.includes("wins")) {
+                resetGame();
+            }
+        }
+
+        window.onclick = function (event) {
+            const winModal = document.getElementById('winModal');
+            if (event.target === winModal) {
+                winModal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+
+</html>
